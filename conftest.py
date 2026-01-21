@@ -1,8 +1,9 @@
 import pytest
+from getpass import getpass
 from playwright.sync_api import Page, expect
 
-USERNAME = "adrianupf"
-PASSWORD = "adrianupf"
+USERNAME = input("Introduce your username: ")
+PASSWORD = getpass(prompt="Introduce your password: ")
 
 
 @pytest.fixture(scope="function")
