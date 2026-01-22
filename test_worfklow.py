@@ -1,15 +1,17 @@
 
-import re
+import random
 from playwright.sync_api import expect
 
-# test E2E to prove that the workflow can be run from the beginning to finish 
+
+# test E2E to prove that the workflow can be run from the beginning to finish
 def test_workflow(auth_page):
-    TEXT = "TEST E2E FROM SCRIPT IN PYTHON"
+    TEST_NAME = f"Test_{random.randrange(10000)}"
+    TEXT = f"{TEST_NAME} E2E FROM SCRIPT IN PYTHON"
     # --- Step Create RA --- #
     auth_page.locator("#menubtn").click()
     auth_page.get_by_role("button", name="New").click()
-    auth_page.locator("#newRA").get_by_placeholder("name").fill("NuevoRA")
-    auth_page.get_by_role("button",name= re.compile("Create")).click()
+    auth_page.locator("#newRA").get_by_placeholder("name").fill(TEST_NAME)
+    auth_page.get_by_role("button",name="Create").click()
     expect(auth_page.get_by_text("Title:")).to_be_visible()
     # --- Step General information: add molecule too --- #
     auth_page.get_by_role("textbox", name="Descriptive name for this study").fill(TEXT)
@@ -30,7 +32,7 @@ def test_workflow(auth_page):
 
       try:
             selector_task = auth_page.locator("#selectPendingResult").first
-            selector_task.wait_for(state="visible", timeout=2000)
+            selector_task.wait_for(state="visible", timeout=3000)
             has_tasks = True
       except:
             has_tasks = False # no tasks available
@@ -85,7 +87,7 @@ def test_workflow(auth_page):
 
       try:
             selector_decision = auth_page.locator("#selectPendingDecision").first
-            selector_decision.wait_for(state="visible", timeout=2000)
+            selector_decision.wait_for(state="visible", timeout=30000)
             has_decisions = True
       except:
             has_decisions = False # no decisions available
@@ -97,7 +99,13 @@ def test_workflow(auth_page):
             textarea_dec = auth_page.locator("#justification")
             expect(textarea_dec).to_be_visible()
             textarea_dec.press_sequentially(TEXT, delay=10)
-        
+
+            # random decision yes/no to go through different parts of the workflow
+            if random.randrange(2) == 1:
+                 yes_checkbox = auth_page.locator("#inlineRadioDecision1")
+                 yes_checkbox.click()
+                 expect(yes_checkbox).to_be_checked()
+
             submit_btn = auth_page.locator("#decisionForm").get_by_role("button", name="Submit")
             expect(submit_btn).to_be_enabled()
             submit_btn.click()
