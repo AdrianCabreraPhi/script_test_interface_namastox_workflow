@@ -7,6 +7,7 @@ from playwright.sync_api import expect
 def test_workflow(auth_page):
     TEST_NAME = f"Test_{random.randrange(10000)}"
     TEXT = f"{TEST_NAME} E2E FROM SCRIPT IN PYTHON"
+    print(F"--- Executing {TEST_NAME} ---")
     # --- Step Create RA --- #
     auth_page.locator("#menubtn").click()
     auth_page.get_by_role("button", name="New").click()
@@ -27,30 +28,28 @@ def test_workflow(auth_page):
     tasks_tab = auth_page.get_by_role("tab", name="Tasks")
 
     while True:
-
       tasks_tab.click()
+      auth_page.wait_for_load_state("networkidle")
 
       try:
-            selector_task = auth_page.locator("#selectPendingResult").first
-            selector_task.wait_for(state="visible", timeout=3000)
+            selector_task = auth_page.locator("#selectPendingResult")
+            selector_task.wait_for(state="visible", timeout=5000)
             has_tasks = True
       except:
             has_tasks = False # no tasks available
 
       if has_tasks:
-            print("Processing task...")
+            text_first_option = auth_page.locator("#selectPendingResult option").first.inner_text()
+            print(f"Processing task {text_first_option}...")
             selector_task.click() 
-        
             textarea = auth_page.locator("#report")
             add_method = auth_page.get_by_role("button", name="Add method")
 
             expect(textarea.or_(add_method).first).to_be_visible()
 
             if textarea.is_visible():
-                  print("Task type: text")
                   textarea.press_sequentially(TEXT, delay=10)
             else:
-                  print("Task type: value")
                   add_method.click()
                   method_modal = auth_page.locator("#methodModal")
                   expect(method_modal).to_be_visible()
@@ -86,14 +85,15 @@ def test_workflow(auth_page):
       decisions_tab.click()
 
       try:
-            selector_decision = auth_page.locator("#selectPendingDecision").first
-            selector_decision.wait_for(state="visible", timeout=30000)
+            selector_decision = auth_page.locator("#selectPendingDecision")
+            selector_decision.wait_for(state="visible", timeout=5000)
             has_decisions = True
       except:
             has_decisions = False # no decisions available
 
       if has_decisions:
-            print("Processing decision...")
+            text_first_option = auth_page.locator("#selectPendingDecision option").first.inner_text()
+            print(f"Processing decision {text_first_option}...")
             selector_decision.click()
         
             textarea_dec = auth_page.locator("#justification")
