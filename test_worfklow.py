@@ -23,6 +23,23 @@ def test_workflow(auth_page):
     auth_page.get_by_role("button",name="Add",exact=True).click()
     auth_page.get_by_role("dialog",name="Add molecule",).get_by_label("Close").click()
     expect(auth_page.locator("#exampleModal")).to_be_hidden() # wait to confirm modal is closed
+    # --- Choose workflow --- #
+    selector_workflows = auth_page.locator("#workflow_custom")
+    workflows_names = selector_workflows.all_inner_texts()
+    workflows_names = ''.join(workflows_names).split("\n")[:-1]
+    if workflows_names:
+         print("Choose which workflow do you want to test:")
+         for i , workflow in enumerate(workflows_names):
+              print(f"{i}) {workflow}")
+         idx_workflow = -4
+         while idx_workflow not in range(0,len(workflows_names)):
+              try:
+                  idx_workflow = int(input("Introduce number of workflow: "))
+              except:
+                 pass
+         workflow_selected = workflows_names[idx_workflow]
+         selector_workflows.select_option(label=workflow_selected)
+
     auth_page.get_by_role("button",name="Submit",).click()
     expect(auth_page.get_by_text(TEXT)).to_be_visible() # wait text is visible in overview
     tasks_tab = auth_page.get_by_role("tab", name="Tasks")
