@@ -4,7 +4,7 @@ from playwright.sync_api import Page, expect
 from dotenv import load_dotenv
 from pages.login_page import LoginPage
 from pages.dashboard_page import DashboardPage
-
+from pages.general_information_tab import GeneralInformationTab
 load_dotenv()
 
 USERNAME = os.getenv("NAMASTOX_USER")
@@ -32,3 +32,6 @@ def auth_page(page:Page,login_page: LoginPage):
 def dashboard_page(auth_page):
     return DashboardPage(auth_page)
 
+@pytest.fixture()
+def general_information_tab(page):
+    return GeneralInformationTab(page)
