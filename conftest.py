@@ -3,7 +3,7 @@ from getpass import getpass
 from playwright.sync_api import Page, expect
 from dotenv import load_dotenv
 from pages.login_page import LoginPage
-
+from pages.dashboard_page import DashboardPage
 
 load_dotenv()
 
@@ -16,15 +16,19 @@ if USERNAME is None or PASSWORD is None:
     USERNAME = input("Introduce your username: ")
     PASSWORD = getpass(prompt="Introduce your password: ")
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def login_page(page: Page):
     return LoginPage(page)
 
-
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def auth_page(page:Page,login_page: LoginPage):
     login_page.navigate()
     login_page.login(USERNAME,PASSWORD)
     assert login_page.is_logged(), "Incorrect credentials"
 
     return page
+
+@pytest.fixture()
+def dashboard_page(auth_page):
+    return DashboardPage(auth_page)
+
