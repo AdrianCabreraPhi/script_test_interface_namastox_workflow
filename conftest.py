@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from pages.login_page import LoginPage
 from pages.dashboard_page import DashboardPage
 from pages.general_information_tab import GeneralInformationTab
+from pages.tasks_tab import TasksTab
+from pages.decisions_tab import DecisionsTab
 load_dotenv()
 
 USERNAME = os.getenv("NAMASTOX_USER")
@@ -35,3 +37,11 @@ def dashboard_page(auth_page):
 @pytest.fixture()
 def general_information_tab(page):
     return GeneralInformationTab(page)
+
+@pytest.fixture()
+def tasks_tab(page):
+    return TasksTab(page)
+
+@pytest.fixture()
+def decisions_tab(page):
+    return DecisionsTab(page)

@@ -12,7 +12,8 @@ class GeneralInformationTab:
         self.autocomplete_button = page.get_by_role("button",name="Autocomplete")
         self.smiles_input = page.locator("#substance_SMILES")
         self.add_mol_button = page.get_by_role("button",name="Add",exact=True)
-        
+        self.selector_workflows =  page.locator("#workflow_custom")
+        self.submit_button = page.get_by_role("button",name="Submit",)
 
     def title(self,text):
         self.title_input.fill(text)
@@ -30,6 +31,8 @@ class GeneralInformationTab:
     
     def close_modal(self):
         self.close_modal_button.click()
+    def submit(self):
+        self.submit_button.click()
 
     
 
