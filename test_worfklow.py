@@ -4,7 +4,7 @@ from playwright.sync_api import expect
 
 
 # test E2E to prove that the workflow can be run from the beginning to finish
-def test_workflow(auth_page,dashboard_page):
+def test_workflow(auth_page,dashboard_page,general_information_tab,tasks_tab,decisions_tab):
     TEST_NAME = f"Test_{random.randrange(10000)}"
     TEXT = f"{TEST_NAME} E2E FROM SCRIPT IN PYTHON"
     print(F"--- Executing {TEST_NAME} ---")
@@ -12,19 +12,21 @@ def test_workflow(auth_page,dashboard_page):
     dashboard_page.show_options()
     dashboard_page.open_modal_new_ra()
     dashboard_page.create_new_ra(TEST_NAME)
+
     # --- Step General information: add molecule too --- #
+    # check if general information is visible
+    expect(general_information_tab.title_label).to_be_visible()
+    general_information_tab.title(TEXT)
+    general_information_tab.open_modal_add_mol()
+    general_information_tab.substance_name("ibuprofen")
+    general_information_tab.autocomplete()
+    expect(general_information_tab.smiles_input).not_to_be_empty() # check if field SMILES is autocompleted
+    general_information_tab.add_mol()
+    general_information_tab.close_modal()
+    expect(general_information_tab.modal).to_be_hidden() # wait to confirm modal is closed
     
-    auth_page.get_by_role("textbox", name="Descriptive name for this study").fill(TEXT)
-    auth_page.get_by_role("button",name="Add Molecule").click()
-    auth_page.locator("#substance_name").fill("ibuprofen")
-    auth_page.get_by_role("button",name="Autocomplete").click()
-    expect(auth_page.locator("#substance_SMILES")).not_to_be_empty() # check if field SMILES is autocompleted
-    auth_page.get_by_role("button",name="Add",exact=True).click()
-    auth_page.get_by_role("dialog",name="Add molecule",).get_by_label("Close").click()
-    expect(auth_page.locator("#exampleModal")).to_be_hidden() # wait to confirm modal is closed
     # --- Choose workflow --- #
-    selector_workflows = auth_page.locator("#workflow_custom")
-    workflows_names = selector_workflows.all_inner_texts()
+    workflows_names = general_information_tab.selector_workflows.all_inner_texts()
     workflows_names = ''.join(workflows_names).split("\n")[:-1]
     if workflows_names:
          print("Choose which workflow do you want to test:")
@@ -37,95 +39,74 @@ def test_workflow(auth_page,dashboard_page):
               except:
                  pass
          workflow_selected = workflows_names[idx_workflow]
-         selector_workflows.select_option(label=workflow_selected)
+         general_information_tab.selector_workflows.select_option(label=workflow_selected)
 
-    auth_page.get_by_role("button",name="Submit",).click()
-    expect(auth_page.get_by_text(TEXT)).to_be_visible() # wait text is visible in overview
-    tasks_tab = auth_page.get_by_role("tab", name="Tasks")
+    general_information_tab.submit()
+    expect(general_information_tab.page.get_by_text(TEXT)).to_be_visible() # wait text is visible in overview
+
 
     while True:
-      tasks_tab.click()
-      auth_page.wait_for_load_state("networkidle")
+      tasks_tab.navigate()
 
       try:
-            selector_task = auth_page.locator("#selectPendingResult")
-            selector_task.wait_for(state="visible", timeout=5000)
+            tasks_tab.selector.wait_for(state="visible", timeout=5000)
             has_tasks = True
       except:
             has_tasks = False # no tasks available
 
       if has_tasks:
-            text_first_option = auth_page.locator("#selectPendingResult option").first.inner_text()
-            print(f"Processing task {text_first_option}...")
-            selector_task.click() 
-            textarea = auth_page.locator("#report")
-            add_method = auth_page.get_by_role("button", name="Add method")
+            print(f"Processing task {tasks_tab.first_task_text()}...")
+            tasks_tab.selector.click()
 
-            expect(textarea.or_(add_method).first).to_be_visible()
+            expect(tasks_tab.report_textarea.or_(tasks_tab.open_modal_method_button).first).to_be_visible()
 
-            if textarea.is_visible():
-                  textarea.press_sequentially(TEXT, delay=10)
+            if tasks_tab.report_textarea.is_visible():
+                  tasks_tab.report_textarea.press_sequentially(TEXT, delay=1)
             else:
-                  add_method.click()
-                  method_modal = auth_page.locator("#methodModal")
-                  expect(method_modal).to_be_visible()
-                  method_modal.locator("#name").fill("te2e")
-                  method_modal.locator("#description").fill("te2e")
-                  method_modal.locator("#link").fill("te2e")
-                  method_modal.locator("#sensitivity").fill("1")
-                  method_modal.locator("#specificity").fill("1")
-                  method_modal.locator("#sd").fill("1")
-                  method_modal.get_by_role("button", name="Add", exact=True).click()
-                  method_modal.locator("#btncloseImportTableModal").click()
-                  expect(method_modal).to_be_hidden()
-                  add_value = auth_page.get_by_role("button", name="Add value")
-                  add_value.click()
-                  add_value_modal = auth_page.locator("#extraInformation")
-                  expect(add_value_modal).to_be_visible()
-                  select_method = auth_page.locator("#method")
-                  select_method.first.click()
-                  add_value_modal.locator("#parameter").fill("te2e")
-                  add_value_modal.locator("#value").fill("te2e")
-                  add_value_modal.get_by_role("button", name="Add", exact=True).click()
-                  add_value_modal.locator("#btncloseImportTableModal").click()
-                  expect(add_value_modal).to_be_hidden()
+                  tasks_tab.open_modal_method_button.click()
+                  expect(tasks_tab.method_modal).to_be_visible()
 
-            
-            submit_btn = auth_page.locator("#taskForm").get_by_role("button", name="Submit")
-            expect(submit_btn).to_be_enabled()
-            submit_btn.click()
-            auth_page.wait_for_timeout(1000)
+                  tasks_tab.complete_method_form() # complete with random data method form
+                  tasks_tab.add_method()
+                  tasks_tab.close_modal()
+                  expect(tasks_tab.method_modal).to_be_hidden()
+
+                  tasks_tab.open_modal_add_value_button.click()
+                  expect(tasks_tab.add_value_modal).to_be_visible()
+               
+                  tasks_tab.selector_method.first.click()
+                  tasks_tab.complete_add_value_form()
+                  tasks_tab.add_value()
+                  tasks_tab.close_add_value_modal()
+                  expect(tasks_tab.add_value_modal).to_be_hidden()
+
+           
+            expect(tasks_tab.submit_button).to_be_enabled()
+            tasks_tab.submit_button.click()
+            tasks_tab.page.wait_for_timeout(1000)
             continue 
 
-      decisions_tab = auth_page.get_by_role("tab", name="Decisions")
-      decisions_tab.click()
+      decisions_tab.navigate()
 
       try:
-            selector_decision = auth_page.locator("#selectPendingDecision")
-            selector_decision.wait_for(state="visible", timeout=5000)
+            decisions_tab.selector.wait_for(state="visible", timeout=5000)
             has_decisions = True
       except:
             has_decisions = False # no decisions available
 
       if has_decisions:
-            text_first_option = auth_page.locator("#selectPendingDecision option").first.inner_text()
-            print(f"Processing decision {text_first_option}...")
-            selector_decision.click()
-        
-            textarea_dec = auth_page.locator("#justification")
-            expect(textarea_dec).to_be_visible()
-            textarea_dec.press_sequentially(TEXT, delay=10)
+            print(f"Processing decision {decisions_tab.first_option_text()}...")
+            decisions_tab.selector.click()
+            expect(decisions_tab.justification_textarea).to_be_visible()
+            decisions_tab.justification_textarea.press_sequentially(TEXT, delay=1)
 
             # random decision yes/no to go through different parts of the workflow
             if random.randrange(2) == 1:
-                 yes_checkbox = auth_page.locator("#inlineRadioDecision1")
-                 yes_checkbox.click()
-                 expect(yes_checkbox).to_be_checked()
+                 decisions_tab.option_yes.click()
+                 expect(decisions_tab.option_yes).to_be_checked()
 
-            submit_btn = auth_page.locator("#decisionForm").get_by_role("button", name="Submit")
-            expect(submit_btn).to_be_enabled()
-            submit_btn.click()
-            auth_page.wait_for_timeout(1000)
+            decisions_tab.submit()
+            decisions_tab.page.wait_for_timeout(1000)
             continue 
 
       if not has_tasks and not has_decisions:
