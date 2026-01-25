@@ -2,6 +2,8 @@ import pytest,os
 from getpass import getpass
 from playwright.sync_api import Page, expect
 from dotenv import load_dotenv
+from pages.login_page import LoginPage
+
 
 load_dotenv()
 
@@ -15,14 +17,14 @@ if USERNAME is None or PASSWORD is None:
     PASSWORD = getpass(prompt="Introduce your password: ")
 
 @pytest.fixture(scope="function")
-def auth_page(page: Page):
+def login_page(page: Page):
+    return LoginPage(page)
 
-    page.goto("https://namastox.upf.edu/auth/realms/namastox/protocol/openid-connect/auth?client_id=namastox-client&redirect_uri=https://namastox.upf.edu/callback&response_type=code&scope=openid%20profile%20email")
 
-    page.locator("#username").fill(USERNAME)
-    page.locator("#password").fill(PASSWORD)
-    page.locator("#kc-login").click()
-    
-    expect(page.get_by_text("Select RA")).to_be_visible()
+@pytest.fixture(scope="function")
+def auth_page(page:Page,login_page: LoginPage):
+    login_page.navigate()
+    login_page.login(USERNAME,PASSWORD)
+    assert login_page.is_logged(), "Incorrect credentials"
 
-    yield page
+    return page
